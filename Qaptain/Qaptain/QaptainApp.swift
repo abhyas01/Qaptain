@@ -11,6 +11,8 @@ import FirebaseCore
 @main
 struct QaptainApp: App {
     
+    @StateObject private var authController = AuthController.shared
+    
     init() {
         FirebaseApp.configure()
     }
@@ -18,6 +20,10 @@ struct QaptainApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authController)
+                .onAppear {
+                    authController.listenToAuthChanges()
+                }
         }
     }
 }

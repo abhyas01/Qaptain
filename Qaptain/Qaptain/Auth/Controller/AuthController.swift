@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 // MARK: - Authentication State Enum
 
@@ -36,6 +37,7 @@ class AuthController: ObservableObject {
     // MARK: - Properties
 
     var userId: String = ""
+    var email: String?
     
     // MARK: - Computed Properties
 
@@ -76,7 +78,7 @@ class AuthController: ObservableObject {
     ///   - email: User's email address
     ///   - password: User's password
     ///   - retryPassword: Password confirmation for sign up
-    func authenticate(email: String, password: String, retryPassword: String) {
+    func authenticate(email: String, password: String, retryPassword: String, fullName: String) {
         Task {
             self.resetUIBeforeAuthentication()
             
@@ -84,10 +86,21 @@ class AuthController: ObservableObject {
             let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
             let trimmedRetryPassword = retryPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanedFullName = self.cleanAndCapitalizeFullName(fullName)
             
             // Validate email is not empty
             guard !trimmedEmail.isEmpty else {
                 self.authenticateWithFailure(message: "Email can't be empty.")
+                return
+            }
+            
+            guard !cleanedFullName.isEmpty || !self.isSignUp else {
+                self.authenticateWithFailure(message: "Full Name can't be empty.")
+                return
+            }
+            
+            guard cleanedFullName.count >= 7 && cleanedFullName.count <= 20 || !self.isSignUp else {
+                self.authenticateWithFailure(message: "Full Name must be between 7 and 20 characters long.")
                 return
             }
             
@@ -105,9 +118,9 @@ class AuthController: ObservableObject {
             
             // Route to appropriate authentication method
             if self.isSignUp {
-                await self.signUp(email: email, password: password)
+                await self.signUp(email: trimmedEmail, password: trimmedPassword, withFullName: cleanedFullName)
             } else {
-                await self.signIn(email: email, password: password)
+                await self.signIn(email: trimmedEmail, password: trimmedPassword)
             }
         }
     }
@@ -140,6 +153,8 @@ class AuthController: ObservableObject {
             // Store or clear user ID based on authentication status
             if let user = Auth.auth().currentUser {
                 self?.userId = user.uid
+                self?.email = user.email
+                
                 print("User ID: \(String(describing: self?.userId))")
             } else {
                 print("No user is signed in,")
@@ -194,9 +209,20 @@ class AuthController: ObservableObject {
     /// - Parameters:
     ///   - email: User's email address
     ///   - password: User's chosen password
-    private func signUp(email: String, password: String) async {
+    private func signUp(email: String, password: String, withFullName name: String) async {
         do {
-            try await Auth.auth().createUser(withEmail: email, password: password)
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            
+            let user = result.user
+            
+            let userData: [String: String] = [
+                "userId": user.uid,
+                "email": user.email ?? email,
+                "name": name
+            ]
+            
+            try await Firestore.firestore().collection("users").document(user.uid).setData(userData)
+            
             self.authenticateWithSuccess()
         } catch {
             self.authenticateWithFailure(message: error.localizedDescription)
@@ -214,6 +240,20 @@ class AuthController: ObservableObject {
         } catch {
             self.authenticateWithFailure(message: error.localizedDescription)
         }
+    }
+
+    private func cleanAndCapitalizeFullName(_ fullName: String) -> String {
+        let trimmedFullName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let components = trimmedFullName
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        
+        let capitalizedComponents = components.map { word in
+            word.prefix(1).uppercased() + word.dropFirst().lowercased()
+        }
+        
+        return capitalizedComponents.joined(separator: " ")
     }
 
     // MARK: - Private UI Helper Methods

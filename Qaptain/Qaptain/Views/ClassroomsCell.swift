@@ -53,7 +53,7 @@ struct ClassroomsCell: View {
 #Preview {
     ClassroomsCell(
         classroomName: "MPCS 5031: Advanced iOS Development",
-        createdByName: "T.A. Binkowski",
+        createdByName: "T.A. Binkowski. Abhyas",
         createdAt: Date()
     )
 }

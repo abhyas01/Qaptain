@@ -1,13 +1,13 @@
 //
-//  Classroom.swift
+//  Member.swift
 //  Qaptain
 //
-//  Created by Abhyas Mall on 5/23/25.
+//  Created by Abhyas Mall on 5/27/25.
 //
 
 import FirebaseFirestore
 
-struct Classroom: Identifiable, Codable {
+struct Member: Identifiable, Codable {
     @DocumentID var id: String?
     var classroomName: String
     @ServerTimestamp var createdAt: Date?

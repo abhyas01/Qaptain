@@ -22,6 +22,7 @@ struct AuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var retryPassword = ""
+    @State private var fullName = ""
     
     // MARK: - Body
 
@@ -43,6 +44,15 @@ struct AuthView: View {
                 
                 Spacer()
                     .listRowBackground(Color.clear)
+                
+                if authController.isSignUp && !authController.hasForgotPassword {
+                    Section("Full Name") {
+                        TextField("Full Name",
+                                  text: $fullName
+                        )
+                        .font(.title2)
+                    }
+                }
                 
                 Section("Email") {
                     TextField("Email",
@@ -104,7 +114,8 @@ struct AuthView: View {
                         authController.authenticate(
                             email: email,
                             password: password,
-                            retryPassword: retryPassword
+                            retryPassword: retryPassword,
+                            fullName: fullName
                         )
                     }
                 } label: {

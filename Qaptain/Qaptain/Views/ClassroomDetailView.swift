@@ -13,7 +13,7 @@ struct ClassroomDetailView: View {
     let documentId: String
     let createdAt: Date
     let createdByName: String
-    let admin: Bool
+    let isCreator: Bool
     
     @State private var didCopy = false
     @State private var didRegenerate = false
@@ -24,23 +24,27 @@ struct ClassroomDetailView: View {
     @State private var isSavingEdit = false
     
     @State private var classroomName: String
-    @State private var classroomPassword: String?
+    @State private var classroomPassword: String
+    
+    @State private var duplicateAlert: Bool = false
     
     init(userId: String,
          documentId: String,
          classroomName: String,
          createdAt: Date,
          createdByName: String,
-         admin: Bool
+         isCreator: Bool,
+         password: String
     ) {
         self.userId = userId
         self.documentId = documentId
         self.classroomName = classroomName
         self.createdAt = createdAt
         self.createdByName = createdByName
-        self.admin = admin
+        self.isCreator = isCreator
         
         self.editedName = classroomName
+        self.classroomPassword = password
     }
     
     enum ButtonType: CaseIterable {
@@ -70,6 +74,21 @@ struct ClassroomDetailView: View {
             }
         }
     }
+    
+    private var trimmedEditedName: String {
+        let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let components = trimmedName
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        
+        return components.joined(separator: " ")
+    }
+    
+    private var isEditedNameValid: Bool {
+        let count = trimmedEditedName.count
+        return count >= 8 && count <= 150
+    }
 
     var body: some View {
         NavigationStack {
@@ -81,12 +100,8 @@ struct ClassroomDetailView: View {
                         VStack(spacing: 60) {
                             headerSection
                             
-                            if admin {
-                                if let _ = classroomPassword {
-                                    passwordSection
-                                } else {
-                                    ProgressView()
-                                }
+                            if isCreator {
+                                passwordSection
                             }
                         
                             VStack(spacing: 20) {
@@ -103,15 +118,34 @@ struct ClassroomDetailView: View {
                     .frame(minHeight: geometry.size.height)
                 }
             }
-            .onAppear {
-                fetchClassroomPassword()
+            
+            .alert("Renaming Failed", isPresented: $duplicateAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The classroom name must be unique among all classrooms you have created.")
             }
+            
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(classroomName)
                         .font(.headline)
                         .fontDesign(.rounded)
                         .foregroundStyle(.orange)
+                }
+                
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        
+                        Button {
+                            dismissKeyboard()
+                        } label: {
+                            Image(
+                                systemName: "keyboard.chevron.compact.down"
+                            )
+                            .tint(.orange)
+                        }
+                    }
                 }
             }
         }
@@ -138,7 +172,7 @@ struct ClassroomDetailView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                if admin {
+                if isCreator {
                     Button {
                         if !isEditingName {
                             
@@ -146,7 +180,7 @@ struct ClassroomDetailView: View {
                                 isEditingName = true
                             }
                             
-                        } else {
+                        } else if isEditedNameValid {
                             
                             withAnimation {
                                 isSavingEdit = true
@@ -154,13 +188,29 @@ struct ClassroomDetailView: View {
                             
                             DataManager.shared.updateClassroomName(
                                 documentId: documentId,
-                                withName: editedName,
+                                userId: userId,
+                                withName: trimmedEditedName,
                                 completionHandler: { newName in
-                                    isSavingEdit = false
-                                    isEditingName = false
                                     
-                                    if let newName = newName {
-                                        classroomName = newName
+                                    DispatchQueue.main.async {
+                                        
+                                        withAnimation {
+                                            isSavingEdit = false
+                                            isEditingName = false
+                                        }
+                                        
+                                        if let newName = newName {
+                                            withAnimation {
+                                                classroomName = newName
+                                                editedName = newName
+                                            }
+                                            
+                                        } else {
+                                            withAnimation {
+                                                editedName = classroomName
+                                                duplicateAlert = true
+                                            }
+                                        }
                                     }
                                 }
                             )
@@ -180,7 +230,7 @@ struct ClassroomDetailView: View {
                             ProgressView()
                         }
                     }
-                    .disabled(isSavingEdit)
+                    .disabled(isSavingEdit || (isEditingName && !isEditedNameValid))
                 }
             }
 
@@ -241,7 +291,7 @@ struct ClassroomDetailView: View {
             .padding(.horizontal, 8)
             
             HStack {
-                Text(classroomPassword ?? "Password Unavailable")
+                Text(classroomPassword)
                     .multilineTextAlignment(.leading)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -282,16 +332,19 @@ struct ClassroomDetailView: View {
             DataManager.shared.regenerateClassroomPassword(
                 documentId: documentId,
                 completionHandler: { password in
-                    withAnimation {
-                        classroomPassword = password
-                        didRegenerate = true
-                        isRegenerating = false
-                        
-                    }
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                    DispatchQueue.main.async {
+                        
                         withAnimation {
-                            didRegenerate = false
+                            classroomPassword = password ?? classroomPassword
+                            didRegenerate = true
+                            isRegenerating = false
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                            withAnimation {
+                                didRegenerate = false
+                            }
                         }
                     }
                 }
@@ -314,18 +367,13 @@ struct ClassroomDetailView: View {
         .disabled(didRegenerate || isRegenerating)
     }
     
-    private func fetchClassroomPassword() {
-        if classroomPassword == nil {
-            DataManager.shared.fetchClassroomPassword(
-                documentId: documentId,
-                failedCompletionHandler: {
-                    classroomPassword = nil
-                },
-                completionHandler: { password in
-                    classroomPassword = password
-                }
-            )
-        }
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 
@@ -336,7 +384,8 @@ struct ClassroomDetailView: View {
         // 150 chars max
         classroomName: "MPCS 51032 Advanced iOS Application Development (Autumn 2022) MPCS 51032 Advanced iOS Application Development (Autumn 2022) MPCS 51032 Advanced iOS De",
         createdAt: Date(),
-        createdByName: "Abhyas Mall",
-        admin: true
+        createdByName: "Abhyas Mall T.A. Binkowski",
+        isCreator: true,
+        password: "548789B9-BFE2-4008-95B3-FC36105049D2"
     )
 }

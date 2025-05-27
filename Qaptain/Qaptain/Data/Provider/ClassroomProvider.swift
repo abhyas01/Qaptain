@@ -14,7 +14,9 @@ class ClassroomProvider: ObservableObject {
     
     @Published var classrooms: [Classroom] = []
     @Published var isLoading = false
-    @Published var hasMoreData = true
+    @Published var isError = false
+    
+    var hasMoreData = true
     
     private var lastDocument: DocumentSnapshot?
     
@@ -27,6 +29,8 @@ class ClassroomProvider: ObservableObject {
         isRefreshing: Bool = false,
         pageSize: Int = 30
     ) {
+
+        self.removeError()
         self.showSpinner()
         
         var query: Query = Firestore
@@ -35,8 +39,8 @@ class ClassroomProvider: ObservableObject {
             .whereField("userId", isEqualTo: userId)
         
         query = getClassesWithTeacherRole
-            ? query.whereField("role", isEqualTo: "teacher")
-            : query.whereField("role", isEqualTo: "student")
+            ? query.whereField("isCreator", isEqualTo: true)
+            : query.whereField("isCreator", isEqualTo: false)
         
         query = query
             .order(by: "classroomCreatedAt", descending: descendingOrder)
@@ -48,10 +52,11 @@ class ClassroomProvider: ObservableObject {
         
         query.getDocuments { [weak self] snapshot, error in
             
-            guard let self = self,
-                  var docs = snapshot?.documents
-            else {
-                self?.stopSpinner()
+            guard let self = self else { return }
+            
+            guard var docs = snapshot?.documents else {
+                self.showError()
+                self.stopSpinner()
                 return
             }
             
@@ -102,7 +107,28 @@ class ClassroomProvider: ObservableObject {
     
     func resetPagination() {
         self.lastDocument = nil
-        self.classrooms = []
+        
+        DispatchQueue.main.async {
+            withAnimation {
+                self.classrooms = []
+            }
+        }
+    }
+    
+    private func showError() {
+        DispatchQueue.main.async {
+            withAnimation {
+                self.isError = true
+            }
+        }
+    }
+    
+    private func removeError() {
+        DispatchQueue.main.async {
+            withAnimation {
+                self.isError = false
+            }
+        }
     }
     
     private func showSpinner() {

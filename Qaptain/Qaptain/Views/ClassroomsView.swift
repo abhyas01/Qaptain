@@ -79,117 +79,126 @@ struct ClassroomsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                
-                    List {
+            
+                List {
+                    
+                    if !provider.isError {
                         
-                        if !provider.isError {
+                        if classrooms.isEmpty {
                             
-                            if classrooms.isEmpty {
+                            if !provider.isLoading {
                                 
-                                if !provider.isLoading {
+                                if query.isEmpty {
                                     
-                                    if query.isEmpty {
-                                        
-                                        Text(
-                                            getClassesWithTeacherRole ?
-                                            "You don't have any classes."
-                                            :
-                                                "You're not enrolled in any class."
-                                        )
+                                    Text(
+                                        getClassesWithTeacherRole ?
+                                        "You don't have any classes."
+                                        :
+                                            "You're not enrolled in any class."
+                                    )
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    
+                                } else {
+                                    
+                                    Text("Cannot find any class that matches your search query")
                                         .multilineTextAlignment(.center)
                                         .frame(maxWidth: .infinity)
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
-                                        
-                                    } else {
-                                        
-                                        Text("Cannot find any class that matches your search query")
-                                            .multilineTextAlignment(.center)
-                                            .frame(maxWidth: .infinity)
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                
-                            } else {
-                                
-                                ForEach(classrooms) { classroom in
-                                    if let id = classroom.id,
-                                       let createdAt = classroom.createdAt {
-                                        
-                                        NavigationLink {
-                                            ClassroomDetailView(
-                                                userId: userId,
-                                                documentId: id,
-                                                classroomName: classroom.classroomName,
-                                                createdAt: createdAt,
-                                                createdByName: classroom.createdByName,
-                                                isCreator: getClassesWithTeacherRole,
-                                                password: classroom.password
-                                            )
-                                        } label: {
-                                            ClassroomsCell(
-                                                classroomName: classroom.classroomName,
-                                                createdByName: classroom.createdByName,
-                                                createdAt: classroom.createdAt
-                                            )
-                                            .onAppear {
-                                                loadMoreIfNeeded(current: classroom)
-                                            }
-                                        }
-                                        .listRowSeparator(.hidden)
-                                    }
                                 }
                             }
                             
-                            if provider.isLoading {
-                                HStack {
-                                    Text("Loading...")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    ProgressView()
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
                         } else {
                             
-                            VStack {
-                                Text("An error occured while fetching classrooms.")
+                            ForEach(classrooms) { classroom in
+                                if let id = classroom.id,
+                                   let createdAt = classroom.createdAt {
+                                    
+                                    NavigationLink {
+                                        ClassroomDetailView(
+                                            userId: userId,
+                                            documentId: id,
+                                            classroomName: classroom.classroomName,
+                                            createdAt: createdAt,
+                                            createdByName: classroom.createdByName,
+                                            isCreator: getClassesWithTeacherRole,
+                                            password: classroom.password
+                                        )
+                                    } label: {
+                                        ClassroomsCell(
+                                            classroomName: classroom.classroomName,
+                                            createdByName: classroom.createdByName,
+                                            createdAt: classroom.createdAt
+                                        )
+                                        .onAppear {
+                                            loadMoreIfNeeded(current: classroom)
+                                        }
+                                    }
+                                    .listRowSeparator(.hidden)
+                                }
+                            }
+                        }
+                        
+                        if provider.isLoading {
+                            HStack {
+                                Text("Loading...")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 
-                                Button {
-                                    updateQuery()
-                                } label: {
-                                    Text("Retry?")
-                                }
-                                .buttonStyle(.borderedProminent)
+                                ProgressView()
                             }
                             .frame(maxWidth: .infinity)
                         }
-                    }
-                
-                    .sheet(isPresented: $showCreateNewClassroom) {
-                        CreateClassroomSheet(userId: userId) {
-                            updateQuery()
+                    } else {
+                        
+                        VStack {
+                            Text("An error occured while fetching classrooms.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            
+                            Button {
+                                updateQuery()
+                            } label: {
+                                Label(
+                                    "Retry?",
+                                    systemImage: "arrow.counterclockwise"
+                                )
+                                .font(.footnote)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.vertical, 20)
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                
-                    .sheet(isPresented: $showEnrollNewClassroom) {
-                        EnrollClassroomSheet(userId: userId) {
-                            updateQuery()
-                        }
-                    }
-                
-                    .listRowSpacing(25)
-                    .refreshable {
+                }
+            
+                .sheet(isPresented: $showCreateNewClassroom) {
+                    CreateClassroomSheet(userId: userId) {
+                        isDescending = true
                         updateQuery()
-                        try? await Task.sleep(
-                            nanoseconds: UInt64(500_000_000)
-                        )
                     }
-                    .searchable(text: $query)
+                }
+            
+                .sheet(isPresented: $showEnrollNewClassroom) {
+                    EnrollClassroomSheet(userId: userId) {
+                        isDescending = true
+                        updateQuery()
+                    }
+                }
+            
+                .listRowSpacing(25)
+                .refreshable {
+                    updateQuery()
+                    try? await Task.sleep(
+                        nanoseconds: UInt64(500_000_000)
+                    )
+                }
+                .searchable(text: $query)
                 
                 VStack {
                     Button {
@@ -220,7 +229,11 @@ struct ClassroomsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack {
-                        Image(systemName: "book.circle")
+                        Image(systemName:
+                                getClassesWithTeacherRole ?
+                              "book.circle" :
+                                "graduationcap.circle"
+                        )
                         
                         Text(
                             getClassesWithTeacherRole ?
@@ -228,7 +241,7 @@ struct ClassroomsView: View {
                                 "Enrolled Classes"
                         )
                     }
-                    .font(.title3)
+                    .font(.title2)
                     .fontDesign(.rounded)
                     .foregroundStyle(.orange)
                     .fontWeight(.bold)
@@ -277,7 +290,7 @@ struct ClassroomsView: View {
                     updateQuery()
                 } label: {
                     HStack {
-                        Text("Descending Order")
+                        Text("Newest First")
                         if isDescending {
                             Spacer()
                             Image(systemName: "checkmark")
@@ -290,7 +303,7 @@ struct ClassroomsView: View {
                     updateQuery()
                 } label: {
                     HStack {
-                        Text("Ascending Order")
+                        Text("Oldest First")
                         if !isDescending {
                             Spacer()
                             Image(systemName: "checkmark")

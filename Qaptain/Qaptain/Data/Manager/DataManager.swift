@@ -32,7 +32,7 @@ class DataManager {
         }
     }
     
-    // MARK: - Classroom Name Functions
+    // MARK: - Classroom CRUD
     
     func joinClassroom(
         userId: String,
@@ -327,8 +327,6 @@ class DataManager {
         return true
     }
     
-    // MARK: - Classroom Password Functions
-    
     func regenerateClassroomPassword(
         documentId: String,
         completionHandler: @escaping (_: String?) -> Void
@@ -348,6 +346,37 @@ class DataManager {
                 withAnimation {
                     completionHandler(error == nil ? newPassword : nil)
                 }
+            }
+        }
+    }
+    
+    // MARK: - Quiz CRUD
+    
+    func getAllQuizDocuments(
+        classroomId: String,
+        userId: String,
+        isDescending: Bool,
+        sortByDeadline: Bool,
+        completionHandler: @escaping ([Quiz]?) -> Void
+    ) {
+       let classroomRef = Firestore
+            .firestore()
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .order(by: sortByDeadline ? "deadline" : "createdAt", descending: isDescending)
+        
+        Task {
+            do {
+                
+                let snapshot = try await classroomRef.getDocuments()
+                let quizData = snapshot.documents.compactMap { try? $0.data(as: Quiz.self) }
+                
+                completionHandler(quizData)
+                
+            } catch {
+                
+                completionHandler(nil)
             }
         }
     }

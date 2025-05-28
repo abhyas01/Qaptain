@@ -91,60 +91,59 @@ struct ClassroomDetailView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            GeometryReader { geometry in
-                ScrollView {
-                    VStack {
-                        Spacer()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack {
+                    Spacer()
+                    
+                    VStack(spacing: 60) {
+                        headerSection
                         
-                        VStack(spacing: 60) {
-                            headerSection
-                            
-                            if isCreator {
-                                passwordSection
-                            }
-                        
-                            VStack(spacing: 20) {
-                                ForEach(ButtonType.allCases, id: \.self) {
-                                    sectionRow(type: $0)
-                                }
-                            }
-                            .padding(.horizontal)
+                        if isCreator {
+                            passwordSection
                         }
-                        .padding()
-                        
-                        Spacer()
+                    
+                        VStack(spacing: 20) {
+                            ForEach(ButtonType.allCases, id: \.self) {
+                                sectionRow(type: $0)
+                            }
+                        }
+                        .padding(.horizontal)
                     }
-                    .frame(minHeight: geometry.size.height)
+                    .padding()
+                    
+                    Spacer()
                 }
+                .frame(minHeight: geometry.size.height)
+            }
+        }
+        
+        .alert("Renaming Failed", isPresented: $duplicateAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The classroom name must be unique among all classrooms you have created.")
+        }
+        
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(classroomName)                
+                    .font(.headline)
+                    .fontDesign(.rounded)
+                    .foregroundStyle(.orange)
+                    .fontWeight(.bold)
             }
             
-            .alert("Renaming Failed", isPresented: $duplicateAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("The classroom name must be unique among all classrooms you have created.")
-            }
-            
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(classroomName)
-                        .font(.headline)
-                        .fontDesign(.rounded)
-                        .foregroundStyle(.orange)
-                }
-                
-                ToolbarItem(placement: .keyboard) {
-                    HStack {
-                        Spacer()
-                        
-                        Button {
-                            dismissKeyboard()
-                        } label: {
-                            Image(
-                                systemName: "keyboard.chevron.compact.down"
-                            )
-                            .tint(.orange)
-                        }
+            ToolbarItem(placement: .keyboard) {
+                HStack {
+                    Spacer()
+                    
+                    Button {
+                        dismissKeyboard()
+                    } label: {
+                        Image(
+                            systemName: "keyboard.chevron.compact.down"
+                        )
+                        .tint(.orange)
                     }
                 }
             }
@@ -251,7 +250,34 @@ struct ClassroomDetailView: View {
     }
     
     private func sectionRow(type: ButtonType) -> some View {
-        Button {
+        NavigationLink {
+            
+            switch type {
+            case .assignments:
+                QuizView(
+                    userId: userId,
+                    classroomId: documentId,
+                    classroomName: classroomName,
+                    createdByName: createdByName,
+                    isCreator: isCreator
+                )
+            case .grades:
+                QuizView(
+                    userId: userId,
+                    classroomId: documentId,
+                    classroomName: classroomName,
+                    createdByName: createdByName,
+                    isCreator: isCreator
+                )
+            case .people:
+                QuizView(
+                    userId: userId,
+                    classroomId: documentId,
+                    classroomName: classroomName,
+                    createdByName: createdByName,
+                    isCreator: isCreator
+                )
+            }
             
         } label: {
             HStack {
@@ -264,6 +290,7 @@ struct ClassroomDetailView: View {
                 Spacer()
                 Image(systemName: "chevron.right")
             }
+            .foregroundStyle(.orange)
         }
         .padding()
         .background(Color(.systemBackground))

@@ -34,7 +34,9 @@ struct AuthenticatedView: View {
                 systemImage: "person",
                 value: TabType.profile
             ) {
-                ProfileView(userId: userId)
+                ProfileView(
+                    userId: userId
+                )
             }
         }
         .animation(.easeInOut, value: selectedTab)

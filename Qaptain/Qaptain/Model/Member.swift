@@ -9,8 +9,9 @@ import FirebaseFirestore
 
 struct Member: Identifiable, Codable {
     @DocumentID var id: String?
-    var classroomName: String
-    @ServerTimestamp var createdAt: Date?
-    var createdByName: String
-    var password: String
+    var userId: String
+    var email: String
+    var name: String
+    var isCreator: Bool
+    var classroomCreatedAt: Date
 }

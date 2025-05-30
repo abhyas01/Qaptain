@@ -61,7 +61,8 @@ struct AuthView: View {
                                 set: { email = $0.lowercased() }
                             )
                     )
-                        .font(.title2)
+                    .textInputAutocapitalization(.never)
+                    .font(.title2)
                 }
                 
                 if authController.hasForgotPassword {

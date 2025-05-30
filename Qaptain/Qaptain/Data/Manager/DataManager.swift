@@ -118,7 +118,7 @@ class DataManager {
         withClassroomName classroomName: String,
         completionHandler: @escaping (_: Bool?) -> Void
     ) {
-        let cleanedClassroomName = self.cleanClassroomName(withName: classroomName)
+        let cleanedClassroomName = self.cleanName(withName: classroomName)
         
         
         guard self.validateLengthOfClassroomName(name: cleanedClassroomName) else {
@@ -206,7 +206,7 @@ class DataManager {
         withName: String,
         completionHandler: @escaping (_: String?) -> Void
     ) {
-        let cleanedName = self.cleanClassroomName(withName: withName)
+        let cleanedName = self.cleanName(withName: withName)
 
         guard self.validateLengthOfClassroomName(name: cleanedName) else {
             completionHandler(nil)
@@ -233,11 +233,7 @@ class DataManager {
                 .collection("classrooms")
                 .document(documentId)
                 .updateData(["classroomName": cleanedName]) { error in
-                    DispatchQueue.main.async {
-                        withAnimation {
-                            completionHandler(error == nil ? cleanedName : nil)
-                        }
-                    }
+                    completionHandler(error == nil ? cleanedName : nil)
                 }
         }
     }
@@ -306,17 +302,6 @@ class DataManager {
             }
     }
     
-    private func cleanClassroomName(withName: String) -> String {
-        let trimmedName = withName
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        let components = trimmedName
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-        
-        return components.joined(separator: " ")
-    }
-    
     private func validateLengthOfClassroomName(name: String) -> Bool {
         let count = name.count
 
@@ -341,20 +326,85 @@ class DataManager {
             .document(documentId)
         
         docRef.updateData(passwordData) { error in
-            
-            DispatchQueue.main.async {
-                withAnimation {
-                    completionHandler(error == nil ? newPassword : nil)
-                }
-            }
+            completionHandler(error == nil ? newPassword : nil)
         }
     }
     
     // MARK: - Quiz CRUD
     
+    func createQuiz(
+        classroomId: String,
+        quizName: String,
+        deadline: Date,
+        questions: [LocalQuestion],
+        completionHandler: @escaping (_: Bool?) -> Void
+    ) {
+        let cleanedQuizName = self.cleanName(withName: quizName)
+        
+        let nameCount = cleanedQuizName.count
+        let isValid = (nameCount >= 4 && nameCount <= 60)
+        
+        guard isValid else {
+            completionHandler(false)
+            return
+        }
+        
+        self.isQuizNameUniqueForClassroom(
+            quizName: cleanedQuizName,
+            currentQuizId: nil,
+            classroomId: classroomId,
+            completion: { isUnique in
+                
+                guard let isUnique = isUnique else {
+                    completionHandler(nil)
+                    return
+                }
+                
+                guard isUnique else {
+                    completionHandler(false)
+                    return
+                }
+                
+                let quizRef = Firestore
+                    .firestore()
+                    .collection("classrooms")
+                    .document(classroomId)
+                    .collection("quizzes")
+                    .document()
+                
+                quizRef.setData([
+                    "quizName": cleanedQuizName,
+                    "createdAt": FieldValue.serverTimestamp(),
+                    "deadline": deadline
+                ]) { error in
+                    
+                    if let _ = error {
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    let batch = Firestore.firestore().batch()
+                    
+                    for q in questions {
+                        let qRef = quizRef.collection("quizQuestions").document()
+                        batch.setData(q.firestoreData, forDocument: qRef)
+                    }
+                    
+                    batch.commit { err in
+                        
+                        if let _ = err {
+                            completionHandler(nil)
+                        } else {
+                            completionHandler(true)
+                        }
+                    }
+                }
+            }
+        )
+    }
+    
     func getAllQuizDocuments(
         classroomId: String,
-        userId: String,
         isDescending: Bool,
         sortByDeadline: Bool,
         completionHandler: @escaping ([Quiz]?) -> Void
@@ -379,5 +429,310 @@ class DataManager {
                 completionHandler(nil)
             }
         }
+    }
+    
+    func getAllQuizStatsForAdmin(
+        classroomId: String,
+        quizId: String,
+        isDescending: Bool,
+        completionHandler: @escaping ([QuizStat]?) -> Void
+    ) {
+        let docRef = Firestore
+            .firestore()
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .document(quizId)
+            .collection("stats")
+            .order(by: "lastAttemptDate", descending: isDescending)
+        
+        Task {
+            do {
+                let stats = try await docRef
+                    .getDocuments()
+                    .documents
+                    .compactMap { try? $0.data(as: QuizStat.self) }
+                
+                completionHandler(stats)
+                
+            } catch {
+                
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func getQuizStatsForUser(
+        classroomId: String,
+        quizId: String,
+        userId: String,
+        completionHandler: @escaping (QuizStat??) -> Void
+    ) {
+        let docRef = Firestore
+            .firestore()
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .document(quizId)
+            .collection("stats")
+            .document(userId)
+        
+        Task {
+            do {
+                let snapshot = try await docRef.getDocument()
+                
+                guard snapshot.exists else {
+                    completionHandler(.some(nil))
+                    return
+                }
+                
+                let stat = try snapshot.data(as: QuizStat.self)
+                completionHandler(.some(stat))
+                
+            } catch {
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func updateQuizNameDeadline(
+        classroomId: String,
+        quizId: String,
+        quizName: String,
+        deadline: Date,
+        createdAt: Date,
+        completionHandler: @escaping (_: String?) -> Void
+    ) {
+        let cleanedQuizName = self.cleanName(withName: quizName)
+        
+        let nameCount = cleanedQuizName.count
+        let isValid = (nameCount >= 4 && nameCount <= 60) && (deadline > createdAt)
+
+        guard isValid else {
+            completionHandler(nil)
+            return
+        }
+        
+        self.isQuizNameUniqueForClassroom(
+            quizName: quizName,
+            currentQuizId: quizId,
+            classroomId: classroomId,
+            completion: { isUnique in
+                
+                guard let isUnique = isUnique else {
+                    completionHandler(nil)
+                    return
+                }
+                
+                guard isUnique else {
+                    completionHandler(nil)
+                    return
+                }
+                
+                let quizRef = Firestore
+                    .firestore()
+                    .collection("classrooms")
+                    .document(classroomId)
+                    .collection("quizzes")
+                    .document(quizId)
+                
+                quizRef.updateData([
+                    "quizName": cleanedQuizName,
+                    "deadline": deadline
+                ]) { error in
+                    if let _ = error {
+                        completionHandler(nil)
+                    } else {
+                        completionHandler(cleanedQuizName)
+                    }
+                }
+            }
+        )
+    }
+    
+    func deleteQuiz(
+        classroomId: String,
+        quizId: String,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        let db = Firestore.firestore()
+        
+        let quizRef = db
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .document(quizId)
+        
+        Task {
+            do {
+        
+                // Delete quizQuestions subcollection
+                let questionsSnapshot = try await quizRef.collection("quizQuestions").getDocuments()
+                for doc in questionsSnapshot.documents {
+                    try await doc.reference.delete()
+                }
+                
+                // Delete stats subcollection
+                let statsSnapshot = try await quizRef.collection("stats").getDocuments()
+                for doc in statsSnapshot.documents {
+                    try await doc.reference.delete()
+                }
+                
+                // Delete the quiz document itself
+                try await quizRef.delete()
+                
+                completionHandler(true)
+                
+            } catch {
+                completionHandler(false)
+            }
+        }
+    }
+    
+    func getAllQuestionsFromQuiz(
+        classroomId: String,
+        quizId: String,
+        completionHandler: @escaping ([Question]?) -> Void
+    ) {
+        let quizQuestionsRef = Firestore
+            .firestore()
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .document(quizId)
+            .collection("quizQuestions")
+        
+        Task {
+            do {
+                
+                let snapshot = try await quizQuestionsRef.getDocuments()
+                let questions: [Question] = snapshot.documents.compactMap { try? $0.data(as: Question.self) }
+                
+                completionHandler(questions)
+                
+            } catch {
+                
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func submitStatsForQuiz(
+        userId: String,
+        classroomId: String,
+        quizId: String,
+        newAttempt: Attempt,
+        completionHandler: @escaping (Bool?) -> Void
+    ) {
+        let statsRef = Firestore
+            .firestore()
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .document(quizId)
+            .collection("stats")
+            .document(userId)
+        
+        Task {
+            do {
+                guard let user = await self.getUser(userId: userId) else {
+                    completionHandler(nil)
+                    return
+                }
+
+                let snapshot = try await statsRef.getDocument()
+
+                var stat: QuizStat
+
+                if snapshot.exists, let existing = try? snapshot.data(as: QuizStat.self) {
+                    
+                    var updatedAttempts = existing.attempts
+                    updatedAttempts.append(newAttempt)
+
+                    stat = QuizStat(
+                        id: userId,
+                        userId: user.userId,
+                        email: user.email,
+                        name: user.name,
+                        lastAttemptDate: newAttempt.attemptDate,
+                        attempts: updatedAttempts
+                    )
+                } else {
+                    
+                    stat = QuizStat(
+                        id: userId,
+                        userId: user.userId,
+                        email: user.email,
+                        name: user.name,
+                        lastAttemptDate: newAttempt.attemptDate,
+                        attempts: [newAttempt]
+                    )
+                }
+
+                try statsRef.setData(from: stat, merge: true)
+
+                completionHandler(true)
+
+            } catch {
+                print("Failed to submit stat: \(error)")
+                completionHandler(false)
+            }
+        }
+    }
+
+    private func isQuizNameUniqueForClassroom(
+        quizName: String,
+        currentQuizId: String?,
+        classroomId: String,
+        completion: @escaping (Bool?) -> Void
+    ) {
+        let db = Firestore.firestore()
+
+        db.collection("classrooms")
+            .document(classroomId)
+            .collection("quizzes")
+            .getDocuments { snapshot, error in
+                
+                if let _ = error {
+                    completion(nil)
+                    return
+                }
+                
+                guard let docs = snapshot?.documents else {
+                    completion(nil)
+                    return
+                }
+
+                let cleanedQuizName = quizName
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+                
+                for doc in docs {
+                    guard let quizData = try? doc.data(as: Quiz.self),
+                          let quizId = quizData.id else { continue }
+
+                    if quizId != currentQuizId &&
+                        cleanedQuizName == quizData.quizName
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .lowercased() {
+                        
+                        completion(false)
+                        return
+                    }
+                }
+
+                completion(true)
+            }
+    }
+
+    private func cleanName(withName: String) -> String {
+        let trimmedName = withName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let components = trimmedName
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        
+        return components.joined(separator: " ")
     }
 }

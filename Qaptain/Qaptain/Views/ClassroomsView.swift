@@ -195,7 +195,9 @@ struct ClassroomsView: View {
                 .refreshable {
                     updateQuery()
                     try? await Task.sleep(
-                        nanoseconds: UInt64(500_000_000)
+                        nanoseconds: UInt64(
+                            1_000_000_000
+                        )
                     )
                 }
                 .searchable(text: $query)

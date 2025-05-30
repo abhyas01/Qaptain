@@ -48,16 +48,13 @@ struct ClassroomDetailView: View {
     }
     
     enum ButtonType: CaseIterable {
-        case assignments
-        case grades
+        case quizzes
         case people
         
         var getString: String {
             switch self {
-            case .assignments:
-                return "Assignments"
-            case .grades:
-                return "Grades"
+            case .quizzes:
+                return "Quizzes"
             case .people:
                 return "People"
             }
@@ -65,10 +62,8 @@ struct ClassroomDetailView: View {
         
         var getIcon: Image {
             switch self {
-            case .assignments:
+            case .quizzes:
                 return Image(systemName: "doc.text")
-            case .grades:
-                return Image(systemName: "chart.bar.fill")
             case .people:
                 return Image(systemName: "person.2.fill")
             }
@@ -172,64 +167,80 @@ struct ClassroomDetailView: View {
                 }
 
                 if isCreator {
-                    Button {
-                        if !isEditingName {
-                            
-                            withAnimation {
-                                isEditingName = true
-                            }
-                            
-                        } else if isEditedNameValid {
-                            
-                            withAnimation {
-                                isSavingEdit = true
-                            }
-                            
-                            DataManager.shared.updateClassroomName(
-                                documentId: documentId,
-                                userId: userId,
-                                withName: trimmedEditedName,
-                                completionHandler: { newName in
-                                    
-                                    DispatchQueue.main.async {
+                    VStack(spacing: 8) {
+                        
+                        Button {
+                            if !isEditingName {
+                                
+                                withAnimation {
+                                    isEditingName = true
+                                }
+                                
+                            } else if isEditedNameValid {
+                                
+                                withAnimation {
+                                    isSavingEdit = true
+                                }
+                                
+                                DataManager.shared.updateClassroomName(
+                                    documentId: documentId,
+                                    userId: userId,
+                                    withName: trimmedEditedName,
+                                    completionHandler: { newName in
                                         
-                                        withAnimation {
-                                            isSavingEdit = false
-                                            isEditingName = false
-                                        }
-                                        
-                                        if let newName = newName {
+                                        DispatchQueue.main.async {
+                                            
                                             withAnimation {
-                                                classroomName = newName
-                                                editedName = newName
+                                                isSavingEdit = false
+                                                isEditingName = false
                                             }
                                             
-                                        } else {
-                                            withAnimation {
-                                                editedName = classroomName
-                                                duplicateAlert = true
+                                            if let newName = newName {
+                                                withAnimation {
+                                                    classroomName = newName
+                                                    editedName = newName
+                                                }
+                                                
+                                            } else {
+                                                withAnimation {
+                                                    editedName = classroomName
+                                                    duplicateAlert = true
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            )
+                                )
+                            }
+                        } label: {
+                            if !isSavingEdit {
+                                Image(
+                                    systemName:
+                                        isEditingName ?
+                                    "checkmark.circle.fill"
+                                    : "pencil.circle.fill"
+                                )
+                                .font(.title2)
+                                .tint(isEditingName ? .green : .accentColor)
+                                
+                            } else {
+                                ProgressView()
+                            }
                         }
-                    } label: {
-                        if !isSavingEdit {
-                            Image(
-                                systemName:
-                                    isEditingName ?
-                                "checkmark.circle.fill"
-                                : "pencil.circle.fill"
-                            )
-                            .font(.title2)
-                            .tint(isEditingName ? .green : .accentColor)
-                            
-                        } else {
-                            ProgressView()
+                        .disabled(isSavingEdit || (isEditingName && !isEditedNameValid))
+                        
+                        if isEditingName {
+                            Button {
+                                withAnimation {
+                                    isEditingName = false
+                                    editedName = classroomName
+                                }
+                            } label: {
+                                Image(systemName: "x.circle")
+                                    .font(.title2)
+                                    .tint(.gray)
+                            }
                         }
                     }
-                    .disabled(isSavingEdit || (isEditingName && !isEditedNameValid))
                 }
             }
 
@@ -253,7 +264,7 @@ struct ClassroomDetailView: View {
         NavigationLink {
             
             switch type {
-            case .assignments:
+            case .quizzes:
                 QuizView(
                     userId: userId,
                     classroomId: documentId,
@@ -261,14 +272,7 @@ struct ClassroomDetailView: View {
                     createdByName: createdByName,
                     isCreator: isCreator
                 )
-            case .grades:
-                QuizView(
-                    userId: userId,
-                    classroomId: documentId,
-                    classroomName: classroomName,
-                    createdByName: createdByName,
-                    isCreator: isCreator
-                )
+
             case .people:
                 QuizView(
                     userId: userId,

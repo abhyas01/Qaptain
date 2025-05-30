@@ -89,21 +89,7 @@ struct QuizView: View {
                 GeometryReader { geometry in
                     ScrollView {
                         Group {
-                            if quizData.isEmpty {
-                                
-                                quizGridView
-                                    .background(
-                                        Color.gray.opacity(0.25)
-                                    )
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 10)
-                                    )
-                                
-                            } else {
-                                
-                                quizGridView
-                                
-                            }
+                            quizGridView
                         }
                         .frame(minHeight: geometry.size.height)
                     }
@@ -114,7 +100,7 @@ struct QuizView: View {
             ToolbarItem(placement: .principal) {
                 HStack {
                     Image(systemName: "book.pages")
-                    Text("Assignments")
+                    Text("Quizzes")
                 }
                 .font(.headline)
                 .fontDesign(.rounded)
@@ -129,8 +115,13 @@ struct QuizView: View {
             }
         }
         
-        .sheet(isPresented: $showAddQuizSheet) {
-            Text("Add Quiz View Placeholder")
+        .fullScreenCover(isPresented: $showAddQuizSheet) {
+            CreateQuizView(
+                classroomId: classroomId,
+                userId: userId
+            ) {
+                getQuizData()
+            }
         }
         
         .onAppear {
@@ -139,7 +130,11 @@ struct QuizView: View {
         
         .refreshable {
             getQuizData()
-            try? await Task.sleep(nanoseconds: UInt64(500_000_000))
+            try? await Task.sleep(
+                nanoseconds: UInt64(
+                    1_000_000_000
+                )
+            )
         }
     }
 
@@ -147,7 +142,12 @@ struct QuizView: View {
         LazyVGrid(
             columns: [
                 GridItem(
-                    .adaptive(minimum: 160),
+                    .adaptive(
+                        minimum:
+                            quizData.isEmpty ?
+                            .infinity :
+                            160
+                    ),
                     spacing: 16
                 )
             ],
@@ -158,8 +158,14 @@ struct QuizView: View {
             }
             
             ForEach(quizData) { quiz in
-                
-                quizCell(quiz: quiz)
+                if let quizCreatedAt = quiz.createdAt,
+                   let quizId = quiz.id {
+                    quizCell(
+                        quizId: quizId,
+                        quizCreatedAt: quizCreatedAt,
+                        quiz: quiz
+                    )
+                }
             }
         }
         .padding()
@@ -178,73 +184,90 @@ struct QuizView: View {
                     .font(.headline)
                     .foregroundColor(.white)
             }
-            .frame(maxWidth: .infinity, minHeight: 230, alignment: .center)
+            .frame(maxWidth: .infinity, minHeight: 255, alignment: .center)
             .background(Color.purple.opacity(0.65))
             .cornerRadius(12)
-            .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
+            .shadow(color: .gray, radius: 5, x: 0, y: 2)
         }
     }
     
     private func quizCell(
+        quizId: String,
+        quizCreatedAt: Date,
         quiz: Quiz
     ) -> some View {
-        
-        VStack(alignment: .leading, spacing: 15) {
-            Text(quiz.quizName)
-                .font(.headline)
-                .lineLimit(3)
-            
-            VStack(alignment: .leading) {
-                Text("Due")
-                    .fontWeight(.heavy)
-                    .font(.footnote)
+        NavigationLink {
+            QuizDetailView(
+                classroomId: classroomId,
+                userId: userId,
+                quizId: quizId,
+                quiz: quiz,
+                quizCreatedAt: quizCreatedAt,
+                isCreator: isCreator
+            )
+        } label: {
+            VStack(alignment: .leading, spacing: 15) {
+                Text(quiz.quizName)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .lineLimit(4)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
                 
                 VStack(alignment: .leading) {
-                    Text(
-                        quiz.deadline.formatted(
-                            date: .abbreviated,
-                            time: .omitted
+                    Text("Due")
+                        .fontWeight(.heavy)
+                        .font(.footnote)
+                    
+                    VStack(alignment: .leading) {
+                        Text(
+                            quiz.deadline.formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            )
                         )
-                    )
-                    Text(
-                        quiz.deadline.formatted(
-                            date: .omitted,
-                            time: .shortened
+                        Text(
+                            quiz.deadline.formatted(
+                                date: .omitted,
+                                time: .shortened
+                            )
                         )
-                    )
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
-            }
-            .foregroundColor(.secondary)
-            
-            VStack(alignment: .leading) {
-                Text("Created")
-                    .fontWeight(.heavy)
-                    .font(.footnote)
+                .foregroundStyle(.black)
                 
                 VStack(alignment: .leading) {
-                    Text(
-                        quiz.createdAt.formatted(
-                            date: .abbreviated,
-                            time: .omitted
+                    Text("Created")
+                        .fontWeight(.heavy)
+                        .font(.footnote)
+                    
+                    VStack(alignment: .leading) {
+                        Text(
+                            quiz.createdAt?.formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            ) ??
+                            "Unknown Date"
                         )
-                    )
-                    Text(
-                        quiz.createdAt.formatted(
-                            date: .omitted,
-                            time: .shortened
+                        Text(
+                            quiz.createdAt?.formatted(
+                                date: .omitted,
+                                time: .shortened
+                            ) ??
+                            "Unknown Time"
                         )
-                    )
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
+                .foregroundStyle(.black)
             }
-            .foregroundColor(.secondary)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.orange.opacity(0.5))
+        .background(.orange)
         .cornerRadius(12)
-        .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
+        .shadow(color: .gray, radius: 5, x: 0, y: 2)
     }
     
     private var sortButton: some View {
@@ -326,7 +349,6 @@ struct QuizView: View {
 
         DataManager.shared.getAllQuizDocuments(
             classroomId: classroomId,
-            userId: userId,
             isDescending: isDescending,
             sortByDeadline: sortByDeadline
         ) { quizDocs in

@@ -1,4 +1,11 @@
-# Qaptin - Empowering Classrooms: Create, Share, and Track Quizzes with Seamless Teacher-Student Collaboration.
+# Qaptin
 
-## Schema (Cloud Firestore)
-![schema](https://github.com/user-attachments/assets/49e5957a-0946-4cc6-a1cc-ac67a5129832)
+## Frameworks and Dependencies
+The following third-party frameworks were integrated following the **FireJournal App tutorial methodology from Module 6**:
+
+**Firebase SDK**
+- FirebaseAuth: User authentication and session management
+- FirebaseFirestore: NoSQL cloud database for real-time data storage and synchronization
+
+## Schema (Firebase Firestore)
+![schema-qaptain-firebase](https://github.com/user-attachments/assets/f78eb2d3-6aff-4149-8a5d-ee54ffc37cd4)

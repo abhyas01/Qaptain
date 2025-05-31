@@ -15,20 +15,37 @@ struct AuthView: View {
     
     // MARK: - Environment Objects
 
+    /// Shared authentication controller that manages all auth state and Firebase operations
+    /// Observed for real-time updates to authentication status, loading states, and error messages
     @EnvironmentObject var authController: AuthController
     
     // MARK: - State Properties
 
+    /// User's email input - automatically converted to lowercase for consistency
+    /// Binds to text field and passes to AuthController for authentication operations
     @State private var email = ""
+    
+    /// User's password input for authentication
+    /// Secure field input that's passed to AuthController for sign in/sign up
     @State private var password = ""
+    
+    /// Password confirmation field for sign up validation
+    /// Must match primary password field to prevent account creation errors
     @State private var retryPassword = ""
+    
+    /// User's full name for account creation during sign up process
+    /// Required field for new user registration, creates user profile in database
     @State private var fullName = ""
     
     // MARK: - Body
 
     var body: some View {
         VStack {
+            
+            // Main form container with dynamic fields based on authentication mode
             Form {
+                
+                // Profile icon header section
                 HStack {
                     Spacer()
                     Image(systemName: "person.circle.fill")
@@ -45,6 +62,7 @@ struct AuthView: View {
                 Spacer()
                     .listRowBackground(Color.clear)
                 
+                // Full name field - only shown during sign up and not in forgot password mode
                 if authController.isSignUp && !authController.hasForgotPassword {
                     Section("Full Name") {
                         TextField("Full Name",
@@ -54,6 +72,7 @@ struct AuthView: View {
                     }
                 }
                 
+                // Email field - always visible for all authentication operations
                 Section("Email") {
                     TextField("Email",
                               text: Binding(
@@ -65,6 +84,7 @@ struct AuthView: View {
                     .font(.title2)
                 }
                 
+                // Password reset feedback - only shown in forgot password mode
                 if authController.hasForgotPassword {
                     HStack {
                         Text(authController.forgotPasswordFeedbackText)
@@ -86,12 +106,14 @@ struct AuthView: View {
                     .listRowSeparator(.hidden)
                 }
                 
+                // Password fields - hidden in forgot password mode
                 if !authController.hasForgotPassword {
                     Section("Password") {
                         SecureField("Password", text: $password)
                             .font(.title2)
                     }
                     
+                    // Confirm password field - only shown during sign up
                     if authController.isSignUp {
                         Section("Rewrite Password") {
                             SecureField("Rewrite Password", text: $retryPassword)
@@ -102,16 +124,30 @@ struct AuthView: View {
             }
             .padding(.bottom)
             .onTapGesture {
+                
+                // Dismiss keyboard when user taps outside form fields
                 dismissKeyboard()
             }
 
+            // Action buttons and error display section
             VStack(spacing: 8) {
                 Button {
+                    print("🎯 Submit button tapped - mode: \(authController.hasForgotPassword ? "forgot password" : (authController.isSignUp ? "sign up" : "sign in"))")
+
+                    // Call forgot password function if forgot password
                     if authController.hasForgotPassword {
+                        
+                        print("📧 Sending password reset email to: \(email)")
+
                         authController.forgotPasswortEmailSend(
                             email: email
                         )
+                        
                     } else {
+                        
+                        print("🔐 Authenticating user - email: \(email), isSignUp: \(authController.isSignUp)")
+
+                        // Call authenticate function if SignUp or SignIn
                         authController.authenticate(
                             email: email,
                             password: password,
@@ -119,12 +155,19 @@ struct AuthView: View {
                             fullName: fullName
                         )
                     }
+                    
                 } label: {
+                    
                     HStack {
                         if authController.isLoading {
+                            
+                            // Loading Feedback
                             Text("Loading")
                             ProgressView()
+                            
                         } else {
+                            
+                            // Submit button with dynamic text
                             Text(authController.submitButtonText)
                                 .font(.title2)
                         }
@@ -135,7 +178,10 @@ struct AuthView: View {
                 .buttonStyle(.borderedProminent)
                 .padding(.horizontal)
 
+                // SignUp/SignIn toggle button only visible if not in forgot password state
                 if !authController.hasForgotPassword {
+                    
+                    // SignUp/SignIn toggle button with dynamic text
                     Button(authController.buttonTextToToggle) {
                         authController.toggleSignUp()
                     }
@@ -143,6 +189,7 @@ struct AuthView: View {
                     .padding(.top)
                 }
                 
+                // Forgot Password toggle button - only visible in SignIn and Forgot Password mode (not SignUp mode)
                 if !authController.isSignUp {
                     Button(authController.forgotPasswordText) {
                         authController.toggleForgotPassword()
@@ -151,6 +198,7 @@ struct AuthView: View {
                     .padding(.top)
                 }
 
+                // Error Feedback to the user
                 if let errorMessage = authController.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
@@ -163,6 +211,8 @@ struct AuthView: View {
         }
         .tint(.orange)
         .toolbar {
+            
+            // Button to dismiss the keyboard
             ToolbarItem(placement: .keyboard) {
                 HStack {
                     Spacer()

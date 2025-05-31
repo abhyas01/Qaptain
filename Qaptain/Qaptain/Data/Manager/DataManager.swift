@@ -113,6 +113,65 @@ class DataManager {
         }
     }
     
+    func removeMember(
+        classroomId: String,
+        userId: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let db = Firestore.firestore()
+        let memberRef = db
+            .collection("classrooms")
+            .document(classroomId)
+            .collection("members")
+            .document(userId)
+        
+        Task {
+            do {
+                try await memberRef.delete()
+                
+                let quizzesSnapshot = try await db
+                    .collection("classrooms")
+                    .document(classroomId)
+                    .collection("quizzes")
+                    .getDocuments()
+                
+                for quizDoc in quizzesSnapshot.documents {
+                    let statsRef = quizDoc.reference.collection("stats").document(userId)
+                    try? await statsRef.delete()
+                }
+                
+                completion(true)
+                
+            } catch {
+                
+                completion(false)
+            }
+        }
+    }
+    
+    func getAllMembers(
+        classroomId: String,
+        completion: @escaping ([Member]?) -> Void
+    ) {
+        let db = Firestore.firestore()
+        
+        db.collection("classrooms")
+            .document(classroomId)
+            .collection("members")
+            .getDocuments { snapshot, error in
+                
+                if let _ = error {
+                    completion(nil)
+                    return
+                }
+                
+                let members = snapshot?.documents.compactMap { doc -> Member? in
+                    try? doc.data(as: Member.self)
+                }
+                completion(members)
+            }
+    }
+    
     func createClassroom(
         userId: String,
         withClassroomName classroomName: String,
@@ -199,6 +258,56 @@ class DataManager {
             }
         )
     }
+    
+    func deleteClassroom(
+        classroomId: String,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        let db = Firestore.firestore()
+        let classroomRef = db.collection("classrooms").document(classroomId)
+
+        Task {
+            do {
+                
+                // Delete all quizzes and their subcollections (quizQuestions, stats)
+                let quizzesSnapshot = try await classroomRef.collection("quizzes").getDocuments()
+                
+                for quizDoc in quizzesSnapshot.documents {
+                    
+                    // Delete quizQuestions
+                    let questionsSnapshot = try await quizDoc.reference.collection("quizQuestions").getDocuments()
+                    for qDoc in questionsSnapshot.documents {
+                        try await qDoc.reference.delete()
+                    }
+                    
+                    // Delete stats
+                    let statsSnapshot = try await quizDoc.reference.collection("stats").getDocuments()
+                    for sDoc in statsSnapshot.documents {
+                        try await sDoc.reference.delete()
+                    }
+                    
+                    // Delete the quiz doc itself
+                    try await quizDoc.reference.delete()
+                }
+
+                // Delete all members
+                let membersSnapshot = try await classroomRef.collection("members").getDocuments()
+                
+                for memberDoc in membersSnapshot.documents {
+                    try await memberDoc.reference.delete()
+                }
+
+                // Delete the classroom document itself
+                try await classroomRef.delete()
+
+                completionHandler(true)
+            } catch {
+                
+                completionHandler(false)
+            }
+        }
+    }
+
     
     func updateClassroomName(
         documentId: String,

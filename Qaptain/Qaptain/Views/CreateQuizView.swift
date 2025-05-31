@@ -39,7 +39,7 @@ struct CreateQuizView: View {
     }
     
     private var canSubmit: Bool {
-        isQuizNameValid && deadline > Date().addingTimeInterval(60*60) && areAllQuestionsValid && !isCreating
+        isQuizNameValid && deadline > Date().addingTimeInterval(30*60) && areAllQuestionsValid && !isCreating
     }
 
     var body: some View {
@@ -293,7 +293,6 @@ struct CreateQuizView: View {
     }
 }
 
-// MARK: - Preview
 #Preview {
     CreateQuizView(classroomId: "demoClassId", userId: "demoUserId")
 }

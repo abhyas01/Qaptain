@@ -15,6 +15,8 @@ struct ClassroomDetailView: View {
     let createdByName: String
     let isCreator: Bool
     
+    @Environment(\.dismiss) private var dismiss
+    
     @State private var didCopy = false
     @State private var didRegenerate = false
     @State private var isRegenerating = false
@@ -27,6 +29,10 @@ struct ClassroomDetailView: View {
     @State private var classroomPassword: String
     
     @State private var duplicateAlert: Bool = false
+    
+    @State private var isDeleting: Bool = false
+    @State private var errorInDeleting: Bool = false
+    @State private var deleteAlert: Bool = false
     
     init(userId: String,
          documentId: String,
@@ -104,6 +110,8 @@ struct ClassroomDetailView: View {
                             }
                         }
                         .padding(.horizontal)
+                        
+                        deleteButton
                     }
                     .padding()
                     
@@ -117,6 +125,21 @@ struct ClassroomDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("The classroom name must be unique among all classrooms you have created.")
+        }
+        
+        .alert(isCreator ? "Are you sure?" : "Are you sure?", isPresented: $deleteAlert) {
+            Button("Yes", role: .destructive) {
+                if isCreator {
+                    deleteThisClassroom()
+                } else {
+                    unenrollFromClass()
+                }
+            }
+            Button("No", role: .cancel) {}
+        } message: {
+            Text(isCreator ?
+                 "This Classroom will be permanently deleted." :
+                 "You will be removed from this classroom. You can rejoin with the password anytime.")
         }
         
         .toolbar {
@@ -274,11 +297,8 @@ struct ClassroomDetailView: View {
                 )
 
             case .people:
-                QuizView(
-                    userId: userId,
+                ClassMembersView(
                     classroomId: documentId,
-                    classroomName: classroomName,
-                    createdByName: createdByName,
                     isCreator: isCreator
                 )
             }
@@ -300,6 +320,49 @@ struct ClassroomDetailView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: Color.gray, radius: 2, x: 0, y: 1)
+    }
+
+    private var deleteButton: some View {
+        Button {
+            
+            deleteAlert = true
+            
+        } label: {
+            
+            if isDeleting {
+                
+                HStack {
+                    ProgressView()
+                    Text(isCreator ? "Deleting..." : "Unenrolling...")
+                }
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity)
+                .padding(8)
+                
+            } else if errorInDeleting {
+                
+                Label(
+                    isCreator ?
+                        "Error occurred while deleting. Try again?" :
+                        "Error occurred while unenrolling. Try again?",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(8)
+                
+            } else {
+                
+                Text(isCreator ? "Delete Classroom" : "Unenroll from Classroom")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                
+            }
+        }
+        .disabled(isDeleting)
+        .buttonStyle(.borderedProminent)
+        .tint((isDeleting || errorInDeleting) ? .secondary : .red)
     }
     
     private var passwordSection: some View {
@@ -366,15 +429,23 @@ struct ClassroomDetailView: View {
                     
                     DispatchQueue.main.async {
                         
-                        withAnimation {
-                            classroomPassword = password ?? classroomPassword
-                            didRegenerate = true
-                            isRegenerating = false
-                        }
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                        if let password = password {
                             withAnimation {
-                                didRegenerate = false
+                                classroomPassword = password
+                                didRegenerate = true
+                                isRegenerating = false
+                            }
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                                withAnimation {
+                                    didRegenerate = false
+                                }
+                            }
+                            
+                        } else {
+                            
+                            withAnimation {
+                                isRegenerating = false
                             }
                         }
                     }
@@ -396,6 +467,71 @@ struct ClassroomDetailView: View {
             }
         }
         .disabled(didRegenerate || isRegenerating)
+    }
+    
+    private func deleteThisClassroom() {
+        withAnimation {
+            isDeleting = true
+            errorInDeleting = false
+        }
+
+        DataManager.shared.deleteClassroom(
+            classroomId: documentId,
+            completionHandler: { success in
+                
+                DispatchQueue.main.async {
+                    
+                    if success {
+                        
+                        withAnimation {
+                            isDeleting = false
+                            dismiss()
+                        }
+                        
+                    } else {
+                        
+                        withAnimation {
+                            isDeleting = false
+                            errorInDeleting = true
+                        }
+                        
+                    }
+                }
+            }
+        )
+    }
+
+    private func unenrollFromClass() {
+        withAnimation {
+            isDeleting = true
+            errorInDeleting = false
+        }
+
+        DataManager.shared.removeMember(
+            classroomId: documentId,
+            userId: userId,
+            completion: { success in
+                
+                DispatchQueue.main.async {
+                    
+                    if success {
+                        
+                        withAnimation {
+                            isDeleting = false
+                            dismiss()
+                        }
+                        
+                    } else {
+                        
+                        withAnimation {
+                            isDeleting = false
+                            errorInDeleting = true
+                        }
+                        
+                    }
+                }
+            }
+        )
     }
     
     private func dismissKeyboard() {

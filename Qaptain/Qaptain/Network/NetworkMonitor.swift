@@ -61,20 +61,27 @@ class NetworkMonitor: ObservableObject {
         print("📡 NetworkMonitor: Starting continuous network path monitoring")
         print("📡 NetworkMonitor: Monitoring all network interfaces (WiFi, Cellular, Ethernet)")
         
-        monitor.pathUpdateHandler = { [weak self] path in
+        self.monitor.pathUpdateHandler = { [weak self] path in
+            
+            guard let self = self else {
+                print("❌ Could not start network monitoring. NetworkMonitor instance deallocated.")
+                return
+            }
+            
+            let wasConnected = self.isConnected
+            
             DispatchQueue.main.async {
                 
-                let wasConnected = self?.isConnected ?? true
-                self?.isConnected = path.status == .satisfied
+                self.isConnected = path.status == .satisfied
                 
-                if wasConnected && !(self?.isConnected ?? true) {
-                    self?.showNetworkAlert = true
+                if wasConnected && !self.isConnected {
+                    self.showNetworkAlert = true
                 }
             }
         }
         
         // Start monitoring on dedicated background queue
-        monitor.start(queue: queue)
+        self.monitor.start(queue: self.queue)
     }
     
     // MARK: - Deinitialization
@@ -82,6 +89,6 @@ class NetworkMonitor: ObservableObject {
     /// Cleanup method to properly stop network monitoring when the monitor is deallocated
     /// Prevents memory leaks and ensures proper resource management
     deinit {
-        monitor.cancel()
+        self.monitor.cancel()
     }
 }

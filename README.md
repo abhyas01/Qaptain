@@ -1,7 +1,14 @@
-# Qaptin
+# Qaptain
+
+## App Working Demo
+
+https://github.com/user-attachments/assets/7f8e313f-a442-4b18-bbf9-6ff5c27554b4
+
+## Authentication Demo
+
+https://github.com/user-attachments/assets/8601435c-8b28-436e-b2d3-34257f194baa
 
 ## Frameworks and Dependencies
-The following third-party frameworks were integrated following the **FireJournal App tutorial methodology from Module 6**:
 
 **Firebase SDK**
 - FirebaseAuth: User authentication and session management

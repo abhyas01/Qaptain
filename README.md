@@ -75,6 +75,8 @@ https://github.com/user-attachments/assets/735b580f-94aa-4ee2-abf1-11233c14e60b
 | [**DataManager.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Manager/DataManager.swift) | Firestore data layer singleton for users, classrooms, quizzes, and stats                                 |
 | [**ClassroomProvider.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Providers/ClassroomProvider.swift) | Singleton ObservableObject that fetches, caches, and manages classroom data with **pagination**, filtering, and UI state updates.                            |
 | [**ClassroomsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/ClassroomsView.swift) | Main navigation for classrooms with segmented control, search, sorting, refresh, and modals              |
+| [**NetworkMonitor.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Network/NetworkMonitor.swift) | Singleton ObservableObject that monitors real-time network connectivity and updates UI via published properties.                                |
+| [**NetworkAlertModifier.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Network/NetworkAlertModifier.swift) / [**View+Extension.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Extensions/View%2BExtension.swift) | Custom ViewModifier and extension providing automatic network connectivity alerts across the app.                                           |
 | [**InstructionsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/InstructionsView.swift) | Onboarding and help view detailing app features for teachers and students                                |
 
 _Additional views/providers/models exist for classroom details, quiz creation, enrollment, and stats_
@@ -99,9 +101,10 @@ _Additional views/providers/models exist for classroom details, quiz creation, e
 
 1. [**QaptainApp.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/QaptainApp.swift) configures Firebase and listens for auth changes via [**AuthController.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Auth/Controller/AuthController.swift).
 2. [**ContentView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Views/ContentView.swift) displays a [SplashScreen.swift](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Views/SplashScreen.swift) overlay, then routes to [**AuthView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Auth/View/AuthView.swift) or [**AuthenticatedView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Views/AuthenticatedView.swift) based on auth state.
-3. Classrooms are loaded and observed via [**ClassroomProvider.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Providers/ClassroomProvider.swift) to provide real-time updates, **pagination**, and role-based filtering.
-4. [**ClassroomsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/ClassroomsView.swift) is the primary entry for authenticated users, with segmented control for Enrolled vs Teaching classes, search, sort, and actions to create/enroll.
-5. [**InstructionsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/InstructionsView.swift) is shown on first launch and available from the toolbar.
+3. The app monitors network connectivity via [**NetworkMonitor.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Network/NetworkMonitor.swift) and displays alerts using the `.networkAlert()` modifier when internet connection is lost, ensuring users are informed before Firebase operations.
+4. Classrooms are loaded and observed via [**ClassroomProvider.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/Providers/ClassroomProvider.swift) to provide real-time updates, **pagination**, and role-based filtering.
+5. [**ClassroomsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/ClassroomsView.swift) is the primary entry for authenticated users, with segmented control for Enrolled vs Teaching classes, search, sort, and actions to create/enroll.
+6. [**InstructionsView.swift**](https://github.com/abhyas01/Qaptain/blob/main/Qaptain/Qaptain/TabViews/Classrooms/InstructionsView.swift) is shown on first launch and available from the toolbar.
 
 ## Setup
 

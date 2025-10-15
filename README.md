@@ -1,6 +1,8 @@
 # Qaptain
 
-**Qaptain** is a SwiftUI iOS app for managing classroom quizzes. Teachers can create classrooms, build multiple-choice quizzes, and monitor student progress in real-time. Students join classrooms using secure passwords, take interactive quizzes, and track their performance instantly.
+- **Qaptain** is a SwiftUI iOS app for managing classroom quizzes.
+- Teachers can create classrooms, build multiple-choice quizzes, and monitor student progress in real-time.
+- Students join classrooms using secure passwords, take interactive quizzes, and track their performance instantly.
 
 ## Overview
 
@@ -16,7 +18,7 @@
 
 https://github.com/user-attachments/assets/c4ae4ea2-fde0-4eee-8918-5f1a6f4fe644
 
-**Authentication & Onboarding Demo**
+**Authentication & Onboarding**
 
 https://github.com/user-attachments/assets/735b580f-94aa-4ee2-abf1-11233c14e60b
 
@@ -91,7 +93,7 @@ _Additional views/providers/models exist for classroom details, quiz creation, e
 * Enrolling/removing members
 * Updating names and propagating to related documents
 * Submitting and retrieving stats
-* Querying with ordering.
+* Querying with ordering
 
 ## App Flow
 

@@ -15,4 +15,4 @@ https://github.com/user-attachments/assets/735b580f-94aa-4ee2-abf1-11233c14e60b
 - FirebaseFirestore: NoSQL cloud database for real-time data storage and synchronization
 
 ## Schema (Firebase Firestore)
-![schema-qaptain-firebase](https://github.com/user-attachments/assets/f78eb2d3-6aff-4149-8a5d-ee54ffc37cd4)
+<img width="4668" height="4370" alt="schema-qaptain-firebase" src="https://github.com/user-attachments/assets/406d4988-11a8-4a8c-abc3-d9d8820c9836" />

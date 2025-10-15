@@ -2,7 +2,7 @@
 
 ## App Working Demo
 
-https://github.com/user-attachments/assets/7f8e313f-a442-4b18-bbf9-6ff5c27554b4
+https://github.com/user-attachments/assets/c4ae4ea2-fde0-4eee-8918-5f1a6f4fe644
 
 ## Authentication Demo
 

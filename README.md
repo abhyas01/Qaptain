@@ -4,7 +4,7 @@
 
 https://github.com/user-attachments/assets/c4ae4ea2-fde0-4eee-8918-5f1a6f4fe644
 
-## Authentication Demo
+## Authentication & Onboarding Demo
 
 https://github.com/user-attachments/assets/735b580f-94aa-4ee2-abf1-11233c14e60b
 

@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/c1ce079c-a518-49dd-a248-0ac0dd3d169a
 
 **Authentication & Onboarding** (< 1 minute)
 
-https://github.com/user-attachments/assets/735b580f-94aa-4ee2-abf1-11233c14e60b
+https://github.com/user-attachments/assets/6ffa71cf-49b7-4739-b950-3ef5e7d36e60
 
 ## Features
 

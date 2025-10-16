@@ -29,7 +29,7 @@
 
   - ### Authentication & Onboarding (< 1 minute)
 
-    _**Splash screen** appears on launch, followed by **login** and **onboarding**._
+    _**Splash screen** appears on launch, followed by **login** and **onboarding**_
     
     https://github.com/user-attachments/assets/6ffa71cf-49b7-4739-b950-3ef5e7d36e60
 
@@ -147,18 +147,18 @@
 
 - If you’d like to connect your **own Firebase project** instead:
 
-  - Create a new project in the [Firebase Console](https://console.firebase.google.com/).  
-  - Add an iOS app and download your own **`GoogleService-Info.plist`** file.  
-  - Replace the existing file in the Xcode project.  
-  - Enable **Email/Password Authentication** and **Cloud Firestore (Native mode)**.  
+  - Create a new project in the [Firebase Console](https://console.firebase.google.com/)  
+  - Add an iOS app and download your own **`GoogleService-Info.plist`** file  
+  - Replace the existing file in the Xcode project  
+  - Enable **Email/Password Authentication** and **Cloud Firestore (Native mode)**  
 
-  _Note: The included Firebase configuration is provided for demo and testing purposes only. Do NOT use it for production._
+  _Note: The included Firebase configuration is provided for demo and testing purposes only. Do NOT use it for production_
 
 ### 3. Run the App
 
-1. Open the project in **Xcode**.  
-2. Choose an **iOS Simulator** or connected device.  
-3. Click **Run (⌘ + R)** - the app will launch and automatically connect to Firebase.
+1. Open the project in **Xcode**  
+2. Choose an **iOS Simulator** or connected device  
+3. Click **Run (⌘ + R)** - the app will launch and automatically connect to Firebase
 
 ## Coding Conventions
 

@@ -69,8 +69,8 @@
 
   - ### UX Details
     * Splash screen overlay
-    * **Loading, Retry, and Error states** are clearly displayed for all CRUD and data-fetching operations
-    * Validates input as you type and updates buttons accordingly
+    * **Loading**, **Retry**, and **Error** states are clearly displayed for all CRUD and data-fetching operations
+    * Validates input as you type and updates _submit_ buttons accordingly
     * Searchable and refreshable (pull-to-refresh) lists with a sorting menu on the toolbar
 
   - ### Accessibility
@@ -78,8 +78,8 @@
     * Descriptive labels for toolbar and buttons
 
   - ### Adaptive & Responsive Design
-    * Automatically adapts to system **light and dark mode**, ensuring a cohesive and visually appealing experience in both themes
-    * **Responsive** across **all iPhone and iPad screen sizes**, maintaining usability and aesthetics in **portrait and landscape orientations**
+    * Automatically switches between **light** and **dark** mode for a consistent look
+    * Responsive on all **iPhone** and **iPad** screens, in both **portrait** and **landscape**
 
 ## Project Structure (Selected Files)
 

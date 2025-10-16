@@ -158,5 +158,15 @@ _Additional views/providers/models exist for classroom details, quiz creation, e
 * Clear logging for major actions and errors
 * Input cleaning and validation for user data
 
+## Project Context
+
+Qaptain was developed as the final project for the course [MPCS 51032 Advanced iOS Application Development (Spring 2025)](https://mpcs-courses.cs.uchicago.edu/2024-25/spring/courses/mpcs-51032-1) at the **University of Chicago**.
+
+## Author  
+
+**Developed by:** [Abhyas Mall](https://www.linkedin.com/in/abhyasmall/)  
+**Project:** [Qaptain](https://github.com/abhyas01/Qaptain/)  
+**Contact:** mallabhyas@gmail.com
+
 ## License
 Qaptain is under the [MIT License](https://github.com/abhyas01/Qaptain/blob/main/LICENSE.md)

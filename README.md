@@ -28,7 +28,9 @@
     https://github.com/user-attachments/assets/c1ce079c-a518-49dd-a248-0ac0dd3d169a
 
   - ### Authentication & Onboarding (< 1 minute)
-  
+
+    _**Splash screen** appears on launch, followed by **login** and **onboarding**._
+    
     https://github.com/user-attachments/assets/6ffa71cf-49b7-4739-b950-3ef5e7d36e60
 
 ## Features
@@ -68,7 +70,7 @@
   - ### UX Details
     * Splash screen overlay
     * **Loading, Retry, and Error states** are clearly displayed for all CRUD and data-fetching operations
-    * Real-time validation and **context-aware button states** ensure valid input
+    * Validates input as you type and updates buttons accordingly
     * Searchable and refreshable (pull-to-refresh) lists with a sorting menu on the toolbar
 
   - ### Accessibility

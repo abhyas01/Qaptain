@@ -62,10 +62,9 @@ https://github.com/user-attachments/assets/6ffa71cf-49b7-4739-b950-3ef5e7d36e60
 ### UX Details
 
 * Splash screen overlay
-* Toolbar sorting menu
-* Searchable lists
 * **Loading, Retry, and Error states** are clearly displayed for all CRUD and data-fetching operations
 * Real-time validation and **context-aware button states** ensure valid input
+* Searchable lists with sorting menu on the toolbar.
 
 ### Accessibility
 
